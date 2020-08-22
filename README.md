@@ -8,10 +8,10 @@ The focus is on the matchmaking implementation, with the hopes of eventually cre
 The layout of the directory structure in this repository should be mostly self-explanatory for now.
 Each sub-directory has its own README which you can visit from the links below.
 
-- [proto](/tree/master/proto) - Collection of [protobuf](https://github.com/protocolbuffers/protobuf/) definitions
-    - [dumps](/tree/master/proto/dumps) - An empty directory for dumping out protobuf messages to.
-- [tools](/tree/master/tools) - Collection of various tools for working with the runtime game or game data.
-    - [tables](/tree/master/tools/tables) - CheatEngine tables used for debugging.
+- [proto](/proto) - Collection of [protobuf](https://github.com/protocolbuffers/protobuf/) definitions
+    - [dumps](/proto/dumps) - An empty directory for dumping out protobuf messages to.
+- [tools](/tools) - Collection of various tools for working with the runtime game or game data.
+    - [tables](/tools/tables) - CheatEngine tables used for debugging.
 
 # How can I help?
 
