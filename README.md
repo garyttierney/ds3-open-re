@@ -22,5 +22,6 @@ I run a Ghidra server containing runtime images of the Dark Souls 3 executable.
 You can access it by connecting to the Ghidra repository at soulsmodding-ghidra-hosting.uksouth.cloudapp.azure.com.
 
 If you would like write access, please ping `sfix#5190` on Discord, either via DM or a ping in ?ServerName?.
+This server is running Ghidra 9.2, so you will need to build your own distribution or get one from [Ghidra, batteries included](https://github.com/garyttierney/ghidra-batteries-included) before you can access the repository.
 
 You can check the [issues](https://github.com/garyttierney/ds3-open-re/issues) page for a list of things that are being worked on. 
