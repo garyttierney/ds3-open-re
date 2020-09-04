@@ -8,7 +8,8 @@ pub type Key = crypto_mac::Key<CarterWegman>;
 
 #[derive(Clone)]
 pub struct CarterWegman {
-    // The moving hash value, represented as the upper 128 bits of a 256 bit product.
+    // The moving hash value, represented as the upper 128 bits of a 256 bit product,
+    // modulo 2^127-1.
     hash: u128,
 
     // The 128 bit multiplier.
