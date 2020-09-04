@@ -12,6 +12,8 @@ Each sub-directory has its own README which you can visit from the links below.
     - [dumps](/proto/dumps) - An empty directory for dumping out protobuf messages to.
 - [tools](/tools) - Collection of various tools for working with the runtime game or game data.
     - [tables](/tools/tables) - CheatEngine tables used for debugging.
+- [packages](/packages) - Rust packages for server emulation.
+    - [cwc](/packages/cwc) - A port of the CWC authenticated cipher mode.
 
 # How can I help?
 

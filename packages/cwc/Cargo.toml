@@ -1,0 +1,20 @@
+[package]
+name = "cwc"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@fastmail.com>"]
+edition = "2018"
+
+[features]
+default = ["aes-mode"]
+aes-mode = ["aes"]
+
+[dependencies]
+aes = { version = "0.5.0", optional = true }
+aead = "0.3"
+block-cipher = "0.8"
+crypto-mac = "0.9"
+generic-array = "0.14"
+typenum = "1.12"
+
+[dev-dependencies]
+hex-literal = "0.3"
