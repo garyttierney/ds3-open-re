@@ -4,6 +4,7 @@ use aead::{AeadInPlace, Error, NewAead, Nonce, Tag};
 use block_cipher::{Block, BlockCipher, NewBlockCipher};
 use crypto_mac::{Mac, NewMac};
 use generic_array::ArrayLength;
+use subtle::ConstantTimeEq;
 use typenum::consts::{U0, U11, U16};
 use typenum::marker_traits::Unsigned;
 
@@ -41,6 +42,64 @@ where
 
         key_block[0] &= 0x7f;
         key_block
+    }
+
+    pub fn cwc_ctr(&self, buffer: &mut [u8], nonce: &[u8]) {
+        let Cwc { cipher, .. } = self;
+        let block_size = C::BlockSize::to_usize();
+
+        let mut encrypted_counter_block = CwcBlock::default();
+        let mut counter_block = [0u8; 16];
+        let mut counter: u32 = 1;
+
+        counter_block[0] = 0x80;
+        counter_block[1..12].copy_from_slice(nonce);
+
+        for block in buffer.chunks_mut(block_size) {
+            counter_block[12..].copy_from_slice(&counter.to_be_bytes());
+            encrypted_counter_block.copy_from_slice(&counter_block);
+
+            cipher.encrypt_block(&mut encrypted_counter_block);
+            xor(block, &encrypted_counter_block);
+
+            counter = counter.wrapping_add(1);
+        }
+    }
+
+    pub fn cwc_mac(&self, aad: &[u8], ciphertext: &[u8], nonce: &[u8]) -> [u8; 16] {
+        let zval = self.derive_key();
+        let mut mac = CarterWegman::new(&zval);
+        mac.update(aad);
+        mac.update(ciphertext);
+
+        let hash = mac.finalize().into_bytes();
+        let mut hash_be = [0u8; 16];
+
+        // TODO: return correct bytestring from finalize() and get rid of redundant word swaps
+        hash_be[12..16].copy_from_slice(&hash[..4]);
+        hash_be[8..12].copy_from_slice(&hash[4..8]);
+        hash_be[4..8].copy_from_slice(&hash[8..12]);
+        hash_be[0..4].copy_from_slice(&hash[12..16]);
+
+        let hash = u128::from_le_bytes(hash_be);
+        let aad_len = aad.len();
+        let len = ciphertext.len();
+        let tag = ((aad_len as u128) << 64 | len as u128) + hash;
+
+        let mut tag_block = tag.to_be_bytes();
+        self.cipher
+            .encrypt_block(CwcBlock::from_mut_slice(&mut tag_block));
+
+        let mut nonce_block = [0u8; 16];
+        nonce_block[0] = 0x80;
+        nonce_block[1..12].copy_from_slice(nonce);
+
+        self.cipher
+            .encrypt_block(CwcBlock::from_mut_slice(&mut nonce_block));
+
+        xor(&mut tag_block, &nonce_block);
+
+        tag_block
     }
 }
 
@@ -80,70 +139,29 @@ where
         associated_data: &[u8],
         buffer: &mut [u8],
     ) -> Result<Tag<Self::TagSize>, Error> {
-        let Cwc { cipher, .. } = self;
-        let block_size = C::BlockSize::to_usize();
-
-        let mut encrypted_counter_block = CwcBlock::default();
-        let mut counter_block = [0u8; 16];
-        let mut counter: u32 = 1;
-
-        counter_block[0] = 0x80;
-        counter_block[1..12].copy_from_slice(nonce);
-
-        for block in buffer.chunks_mut(block_size) {
-            counter_block[12..].copy_from_slice(&counter.to_be_bytes());
-            encrypted_counter_block.copy_from_slice(&counter_block);
-
-            cipher.encrypt_block(&mut encrypted_counter_block);
-            xor(block, &encrypted_counter_block);
-
-            counter = counter.wrapping_add(1);
-        }
-
-        // Derive a MAC key from the underlying block cipher.
-        let zval = self.derive_key();
-        let mut tag = {
-            let mut mac = CarterWegman::new(&zval);
-            mac.update(associated_data);
-            mac.update(buffer);
-
-            let hash = mac.finalize().into_bytes();
-            let mut hash_be = [0u8; 16];
-
-            // TODO: return correct bytestring from finalize() and get rid of redundant word swaps
-            hash_be[12..16].copy_from_slice(&hash[..4]);
-            hash_be[8..12].copy_from_slice(&hash[4..8]);
-            hash_be[4..8].copy_from_slice(&hash[8..12]);
-            hash_be[0..4].copy_from_slice(&hash[12..16]);
-            let hash = u128::from_le_bytes(hash_be);
-
-            let aad_len = associated_data.len();
-            let len = buffer.len();
-
-            let mut tag = (aad_len as u128) << 64 | len as u128;
-            tag += hash;
-
-            tag.to_be_bytes()
-        };
-
-        counter_block[12..].copy_from_slice(&0u32.to_be_bytes());
-
-        cipher.encrypt_block(CwcBlock::from_mut_slice(&mut tag));
-        cipher.encrypt_block(CwcBlock::from_mut_slice(&mut counter_block));
-
-        xor(&mut tag, &counter_block);
+        self.cwc_ctr(buffer, nonce);
+        let tag = self.cwc_mac(associated_data, buffer, nonce);
 
         Ok(Tag::from(tag))
     }
 
     fn decrypt_in_place_detached(
         &self,
-        _nonce: &Nonce<Self::NonceSize>,
-        _aad: &[u8],
-        _buffer: &mut [u8],
-        _tag: &Tag<Self::TagSize>,
+        nonce: &Nonce<Self::NonceSize>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &Tag<Self::TagSize>,
     ) -> Result<(), Error> {
-        unimplemented!()
+        let expected_tag = self.cwc_mac(associated_data, buffer, nonce);
+
+        self.cwc_ctr(buffer, nonce);
+
+        if expected_tag[..].ct_eq(tag).unwrap_u8() == 0 {
+            buffer.iter_mut().for_each(|v| *v = 0);
+            return Err(Error);
+        }
+
+        Ok(())
     }
 }
 
