@@ -43,10 +43,14 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
         with:
-          command: test
-          args: --all
+          version: '0.14.3'
+          args: '-- --test-threads 1'
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.0.13
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
 
