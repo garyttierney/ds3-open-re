@@ -1,4 +1,10 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - staging
+      - trying
+  pull_request: {}
 
 name: rust-ci
 
