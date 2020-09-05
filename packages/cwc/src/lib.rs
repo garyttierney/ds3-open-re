@@ -8,7 +8,7 @@ use subtle::ConstantTimeEq;
 use typenum::consts::{U0, U11, U16};
 use typenum::marker_traits::Unsigned;
 
-use crate::mac::CarterWegman;
+pub use crate::mac::CarterWegman;
 
 mod mac;
 mod traits;
