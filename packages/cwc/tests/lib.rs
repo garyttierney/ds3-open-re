@@ -1,26 +1,60 @@
-use aead::{Aead, NewAead, Nonce, Payload};
-use aes::Aes128;
-use cwc::Cwc;
-use hex_literal::hex;
+use aead::{Aead, Error, NewAead, Nonce, Payload};
+use block_cipher::{Block, BlockCipher, NewBlockCipher};
+use generic_array::ArrayLength;
+use typenum::consts::U16;
+use typenum::Unsigned;
 
-use typenum::consts::{U11, U16};
+use cwc::{Aes128Cwc, Cwc, CwcNonceSize, CwcTagSize};
+use test_vector::TestVector;
 
-pub type Aes128Cwc = Cwc<Aes128, U16, U11>;
+mod test_vector;
+
+fn run_tests<C, M, N>(cipher_fn: fn(key: &[u8]) -> Result<Cwc<C, M, N>, Error>)
+where
+    C: BlockCipher<BlockSize = U16> + NewBlockCipher,
+    C::ParBlocks: ArrayLength<Block<C>>,
+    M: CwcTagSize,
+    N: CwcNonceSize,
+{
+    let key_size = C::KeySize::to_usize();
+    let test_vectors: Vec<TestVector> =
+        test_vector::parse_test_vectors(&include_bytes!("data/aes-cwc.txt")[..])
+            .unwrap()
+            .into_iter()
+            .filter(|it| it.key.len() == key_size)
+            .collect();
+
+    if test_vectors.is_empty() {
+        panic!("no test vectors found for key size {}", key_size);
+    }
+
+    for test_vector in test_vectors {
+        let cipher = cipher_fn(&test_vector.key[..]).unwrap();
+        let mut payload = Payload::from(&test_vector.plaintext[..]);
+        payload.aad = &test_vector.additional_data[..];
+
+        let data = cipher
+            .encrypt(Nonce::from_slice(&test_vector.nonce[..]), payload)
+            .unwrap();
+
+        assert_eq!(
+            test_vector.ciphertext,
+            &data[..data.len() - 16],
+            "failed on comparing ciphertext for test vector {:#?}",
+            test_vector
+        );
+        assert_eq!(
+            test_vector.tag,
+            &data[data.len() - 16..],
+            "failed on comparing tag for test vector {:#?}",
+            test_vector
+        );
+
+        println!("test vector {} passed", test_vector.id);
+    }
+}
 
 #[test]
-fn vector1() {
-    const K_1: [u8; 16] = hex!("00 01 02 03  04 05 06 07  08 09 0a 0b  0c 0d 0e 0f");
-    const P_1: [u8; 8] = hex!("00 01 02 03  04 05 06 07");
-    const N_1: [u8; 11] = hex!("FF EE DD CC  BB AA 99 88  77 66 55");
-    const C_1: [u8; 8] = hex!("88 B8 DF 06  28 FD 51 CC");
-    const T_1: [u8; 16] = hex!("57 55 DB A5  09 9F 3F 1D  60 04 44 97  DE 89 33 A9");
-
-    let cipher = Aes128Cwc::new_varkey(&K_1).unwrap();
-    let payload = Payload::from(&P_1[..]);
-    let data = cipher
-        .encrypt(Nonce::from_slice(&N_1[..]), payload)
-        .unwrap();
-
-    assert_eq!(&C_1, &data[..8]);
-    assert_eq!(&T_1, &data[8..]);
+fn verify_aes128_test_vectors() {
+    run_tests(Aes128Cwc::new_varkey);
 }

@@ -9,10 +9,20 @@ use typenum::consts::{U0, U11, U16};
 use typenum::marker_traits::Unsigned;
 
 use crate::mac::CarterWegman;
-use crate::traits::{CwcBlock, CwcNonceSize, CwcTagSize};
 
 mod mac;
 mod traits;
+
+#[cfg(feature = "aes-mode")]
+mod aes_mode {
+    use aes::Aes128;
+    use typenum::consts::{U11, U16};
+
+    pub type Aes128Cwc = crate::Cwc<Aes128, U16, U11>;
+}
+
+pub use aes_mode::Aes128Cwc;
+pub use traits::{CwcBlock, CwcNonceSize, CwcTagSize};
 
 pub struct Cwc<C, M, N>
 where

@@ -36,26 +36,39 @@ impl Mac for CarterWegman {
     fn update(&mut self, data: &[u8]) {
         let blocks = data.chunks(CWC_MAC_BLOCK_SIZE).map(mac_block_pad);
         let key = self.key;
+        let mut hash = self.hash;
 
-        for mut block in blocks {
-            block += self.hash;
+        for block in blocks {
+            // OUTPUT = OUTPUT + X[12*I : 12*I+12]
+            hash += block;
 
-            let lo = key.wrapping_mul(block);
-            let t0 = (key & 0xffffffff_ffffffff) * (block & 0xffffffff_ffffffff);
-            let t1 = (key >> 64) * (block & 0xffffffff_ffffffff) + (t0 >> 64);
-            let t2 = (block >> 64) * (key & 0xffffffff_ffffffff);
-            let mut hi = (key >> 64) * (block >> 64) + (t2 >> 64) + (t1 >> 64);
-
-            hi <<= 1;
-            hi = hi.wrapping_add(lo);
-
-            if hi & !0x7fffffff_ffffffff_ffffffff_ffffffff != 0 {
-                hi &= 0x7fffffff_ffffffff_ffffffff_ffffffff;
-                hi += 1;
+            // OUTPUT = OUTPUT MOD 2^127-1
+            if hash & !0x7fffffff_ffffffff_ffffffff_ffffffff != 0 {
+                hash &= 0x7fffffff_ffffffff_ffffffff_ffffffff;
+                hash += 1;
             }
 
-            self.hash = hi;
+            // OUTPUT = OUTPUT * KEY
+            let lo_lo = (key & 0xffffffff_ffffffff) * (hash & 0xffffffff_ffffffff);
+            let hi_lo = (key >> 64) * (hash & 0xffffffff_ffffffff);
+            let lo_hi = (key & 0xffffffff_ffffffff) * (hash >> 64);
+            let hi_hi = (key >> 64) * (hash >> 64);
+
+            let cross = (lo_lo >> 64) + (hi_lo & 0xffffffff_ffffffff) + lo_hi;
+            let lo = (cross << 64) | (lo_lo & 0xffffffff_ffffffff);
+            hash = (hi_lo >> 64) + (cross >> 64) + hi_hi;
+
+            // OUTPUT = OUTPUT MOD 2^127-1
+            hash <<= 1;
+            hash = hash.wrapping_add(lo);
+
+            if hash & !0x7fffffff_ffffffff_ffffffff_ffffffff != 0 {
+                hash &= 0x7fffffff_ffffffff_ffffffff_ffffffff;
+                hash += 1;
+            }
         }
+
+        self.hash = hash;
     }
 
     fn reset(&mut self) {
