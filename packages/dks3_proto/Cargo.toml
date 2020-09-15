@@ -1,0 +1,11 @@
+[package]
+name = "dks3_proto"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@fastmail.com>"]
+edition = "2018"
+
+[dependencies]
+protobuf = { version = "2", features = ["with-bytes"] }
+
+[build-dependencies]
+protobuf-codegen-pure = { version = "2" }
