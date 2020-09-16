@@ -1,0 +1,12 @@
+[package]
+name = "dks3_launcher"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@fastmail.com>"]
+edition = "2018"
+
+[dependencies]
+dks3_config = { path = "../dks3_config", features = ["client"] }
+hex-literal = "0.3.1"
+ntapi = "0.3.4"
+tea-soft = "0.2.0"
+winapi = { version = "0.3.9", features = ["errhandlingapi", "memoryapi", "processthreadsapi", "synchapi", "winbase"] }

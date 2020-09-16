@@ -1,5 +1,8 @@
 [workspace]
 members = [
     "packages/cwc",
+    "packages/dks3_config",
+    "packages/dks3_launcher",
     "packages/dks3_proto",
+    "packages/dks3_server"
 ]
