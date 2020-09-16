@@ -8,12 +8,22 @@ The focus is on the matchmaking implementation, with the hopes of eventually cre
 The layout of the directory structure in this repository should be mostly self-explanatory for now.
 Each sub-directory has its own README which you can visit from the links below.
 
+**NOTE**: Most of the following is still a work in progress.
+
 - [proto](/proto) - Collection of [protobuf](https://github.com/protocolbuffers/protobuf/) definitions
     - [dumps](/proto/dumps) - An empty directory for dumping out protobuf messages to.
 - [tools](/tools) - Collection of various tools for working with the runtime game or game data.
     - [tables](/tools/tables) - CheatEngine tables used for debugging.
 - [packages](/packages) - Rust packages for server emulation.
     - [cwc](/packages/cwc) - A port of the CWC authenticated cipher mode.
+    - [dks3_config](packages/dks3_config) - A library containing config structures common to the DkS3 client and server.
+    - [dks3_launcher](packages/dks3_launcher) - A simple launcher and patcher for the game client.
+    - [dks3_proto](packages/dks3_proto) - A standalone implementation of the Dark Souls 3 client to server network protocol.
+    - [dks3_server](packages/dks3_server) - The server emulator.
+
+If you'd like to make changes to any code here without a checkout of the repository, you can use the button below to open a temporary GitPod workspace:
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/garyttierney/ds3-open-re)
 
 # How can I help?
 
