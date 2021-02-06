@@ -24,6 +24,7 @@ mod aes_mode {
 pub use aes_mode::Aes128Cwc;
 pub use traits::{CwcBlock, CwcNonceSize, CwcTagSize};
 
+#[derive(Clone)]
 pub struct Cwc<C, M, N>
 where
     C: BlockCipher<BlockSize = U16>,
