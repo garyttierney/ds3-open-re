@@ -88,9 +88,21 @@ impl Mac for CarterWegman {
     }
 }
 
+#[cfg(not(feature = "from-software"))]
 fn mac_block_pad(block: &[u8]) -> u128 {
     let mut padded = [0u8; 16];
     padded[4..4 + block.len()].copy_from_slice(block);
+
+    u128::from_be_bytes(padded)
+}
+
+#[cfg(feature = "from-software")]
+fn mac_block_pad(block: &[u8]) -> u128 {
+    let mut padded = [0u8; 16];
+    padded[4..block.len() + 4].copy_from_slice(&block);
+    padded[4..8].reverse();
+    padded[8..12].reverse();
+    padded[12..16].reverse();
 
     u128::from_be_bytes(padded)
 }

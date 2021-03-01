@@ -7,6 +7,7 @@ edition = "2018"
 [features]
 default = ["aes-mode"]
 aes-mode = ["aes"]
+from-software = []
 
 [dependencies]
 aes = { version = "0.5.0", optional = true }
