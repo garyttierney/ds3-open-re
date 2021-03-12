@@ -15,6 +15,7 @@ aead = "0.3"
 block-cipher = "0.8"
 crypto-mac = "0.9"
 generic-array = "0.14"
+hex = "0.4"
 subtle = "2.2"
 typenum = "1.12"
 
@@ -22,7 +23,6 @@ typenum = "1.12"
 criterion = "0.3"
 criterion-cycles-per-byte = "0.1"
 hex-literal = "0.3"
-hex = "0.4"
 
 [[bench]]
 name = "mac"

@@ -55,11 +55,17 @@ impl Mac for CarterWegman {
             let hi_hi = (key >> 64) * (hash >> 64);
 
             let cross = (lo_lo >> 64) + (hi_lo & 0xffffffff_ffffffff) + lo_hi;
-            let lo = (cross << 64) | (lo_lo & 0xffffffff_ffffffff);
+            let mut lo = (cross << 64) | (lo_lo & 0xffffffff_ffffffff);
             hash = (hi_lo >> 64) + (cross >> 64) + hi_hi;
 
             // OUTPUT = OUTPUT MOD 2^127-1
             hash <<= 1;
+
+            if lo & !0x7fffffff_ffffffff_ffffffff_ffffffff != 0 {
+                lo &= 0x7fffffff_ffffffff_ffffffff_ffffffff;
+                lo += 1;
+            }
+
             hash = hash.wrapping_add(lo);
 
             if hash & !0x7fffffff_ffffffff_ffffffff_ffffffff != 0 {
